@@ -1,0 +1,8 @@
+# Local environment
+.env
+
+# OS
+.DS_Store
+
+# Logs
+*.log
