@@ -1,17 +1,37 @@
 # EVIS OCPP Emulator
 
-An open-source OCPP (Open Charge Point Protocol) emulator with a UI and backend.
+An open-source OCPP (Open Charge Point Protocol) emulator. Define virtual
+**charge points** that connect out to *your* CSMS backend over WebSocket and
+speak **OCPP 1.6**, define **electric cars**, plug them in, and watch a
+realistic charging simulation burn kWh in real time — all from a dashboard UI.
 
-> **Status:** early development. Right now the stack is just the NestJS backend
-> connected to MongoDB. More features (OCPP charge-point simulation, the UI, etc.)
-> are coming.
+## What it does
+
+- **Charge points** — create stations with any number of connectors (Type2, CCS,
+  CHAdeMO, …) and per-connector max power. Each connects as an OCPP 1.6 *client*
+  to a CSMS WebSocket URL you provide (BootNotification, Heartbeat,
+  StatusNotification, Authorize, StartTransaction, MeterValues, StopTransaction;
+  handles RemoteStart/Stop, Change/GetConfiguration, Reset, SetChargingProfile…).
+- **Cars** — battery capacity, current charge, supported connectors, and max
+  intake power (back-pressure). Drain/refill the battery to test scenarios.
+- **Charging simulation** — link a car to a connector and start charging. Power
+  is `min(connector max, car intake, CSMS charging-profile limit)`; energy and
+  battery SoC tick up in real time and persist; at 100% it auto-stops via OCPP.
+- **Live dashboard** — Mantine UI with realtime updates over Socket.IO.
+- **Optional lock** — runs fully open by default; click 🔒 to register a user and
+  require JWT auth (handy when hosting it).
 
 ## Project structure
 
 ```
 .
-├── back_end/          # NestJS API (TypeORM + MongoDB)
-├── UI/                # Frontend (Vite/React)
+├── back_end/          # NestJS API + OCPP 1.6 engine (TypeORM + MongoDB)
+│   ├── api/           # REST: auth, charge-points, cars, sessions
+│   ├── ocpp-ws/       # OCPP-J client, connection manager, charging simulation
+│   ├── realtime/      # Socket.IO gateway (live updates to the UI)
+│   ├── entities/      # Mongo entities (base, user, charge-point, car, session)
+│   └── libs/          # shared (auth guard/decorators)
+├── UI/                # React + Vite + Mantine dashboard
 └── docker-compose.yml # Spins up MongoDB + the backend
 ```
 
@@ -44,12 +64,37 @@ Node or MongoDB install required.
 4. **Verify it's up:**
 
    ```bash
-   curl http://localhost:3000
-   # -> Hello World!
+   curl http://localhost:3000/api/auth/status
+   # -> {"locked":false}
    ```
 
 To stop: `Ctrl+C`, or `docker compose down`. Mongo data is kept in a named
 volume (`mongo_data`); wipe it with `docker compose down -v`.
+
+## Running the UI
+
+The dashboard runs separately from Vite (the backend has CORS enabled):
+
+```bash
+cd UI
+yarn install
+yarn dev          # http://localhost:5173
+```
+
+By default the UI talks to the backend at `http://localhost:3000/api`. To point
+it elsewhere, set `VITE_API_URL` and `VITE_WS_URL`:
+
+```bash
+VITE_API_URL=http://localhost:3000/api VITE_WS_URL=http://localhost:3000 yarn dev
+```
+
+### Try it end-to-end
+
+1. **Cars** → *New car* (e.g. 50 kWh, Type2, 50 kW intake, start it low).
+2. **Charge Points** → *New charge point*, set the **CSMS WebSocket URL** to your
+   backend under test, add a connector, save, then **Connect**.
+3. On the connected connector, pick the car and **Start** — watch power, energy
+   and battery % climb live until it auto-stops at 100%.
 
 ## Configuration
 

@@ -1,122 +1,131 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import {
+  AppShell,
+  Button,
+  Group,
+  Modal,
+  NavLink,
+  PasswordInput,
+  Stack,
+  TextInput,
+  Title,
+} from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
+import { useForm } from '@mantine/form';
+import { notifications } from '@mantine/notifications';
+import { useQuery } from '@tanstack/react-query';
+import {
+  IconBolt,
+  IconCar,
+  IconHistory,
+  IconLock,
+  IconLogout,
+} from '@tabler/icons-react';
+import { Link, Route, Routes, useLocation } from 'react-router-dom';
+import { getAuthStatus, register, token } from './lib/api';
+import { CarsPage } from './pages/CarsPage';
+import { ChargePointsPage } from './pages/ChargePointsPage';
+import { SessionsPage } from './pages/SessionsPage';
 
-function App() {
-  const [count, setCount] = useState(0)
+const NAV = [
+  { to: '/', label: 'Charge Points', icon: IconBolt },
+  { to: '/cars', label: 'Cars', icon: IconCar },
+  { to: '/sessions', label: 'Sessions', icon: IconHistory },
+];
+
+function LockControl() {
+  const status = useQuery({ queryKey: ['auth-status'], queryFn: getAuthStatus });
+  const [opened, handlers] = useDisclosure(false);
+  const form = useForm({ initialValues: { email: '', password: '' } });
+
+  if (status.data?.locked) {
+    return (
+      <Button
+        variant="light"
+        color="gray"
+        leftSection={<IconLogout size={16} />}
+        onClick={() => {
+          token.clear();
+          window.location.reload();
+        }}
+      >
+        Logout
+      </Button>
+    );
+  }
+
+  const submit = form.onSubmit(async (values) => {
+    try {
+      const { accessToken } = await register(values.email, values.password);
+      token.set(accessToken);
+      notifications.show({ color: 'green', message: 'Instance locked' });
+      window.location.reload();
+    } catch {
+      notifications.show({ color: 'red', message: 'Could not register' });
+    }
+  });
 
   return (
     <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
+      <Button
+        variant="light"
+        leftSection={<IconLock size={16} />}
+        onClick={handlers.open}
+      >
+        Lock instance
+      </Button>
+      <Modal opened={opened} onClose={handlers.close} title="Lock this instance">
+        <form onSubmit={submit}>
+          <Stack>
+            <TextInput label="Email" {...form.getInputProps('email')} />
+            <PasswordInput
+              label="Password"
+              description="At least 8 characters"
+              {...form.getInputProps('password')}
+            />
+            <Button type="submit">Create account &amp; lock</Button>
+          </Stack>
+        </form>
+      </Modal>
     </>
-  )
+  );
 }
 
-export default App
+export default function App() {
+  const location = useLocation();
+  return (
+    <AppShell
+      header={{ height: 60 }}
+      navbar={{ width: 240, breakpoint: 'sm' }}
+      padding="md"
+    >
+      <AppShell.Header>
+        <Group h="100%" px="md" justify="space-between">
+          <Group gap="xs">
+            <IconBolt color="var(--mantine-color-yellow-6)" />
+            <Title order={4}>EVIS OCPP Emulator</Title>
+          </Group>
+          <LockControl />
+        </Group>
+      </AppShell.Header>
+      <AppShell.Navbar p="md">
+        {NAV.map((item) => (
+          <NavLink
+            key={item.to}
+            component={Link}
+            to={item.to}
+            label={item.label}
+            active={location.pathname === item.to}
+            leftSection={<item.icon size={18} />}
+          />
+        ))}
+      </AppShell.Navbar>
+      <AppShell.Main>
+        <Routes>
+          <Route path="/" element={<ChargePointsPage />} />
+          <Route path="/cars" element={<CarsPage />} />
+          <Route path="/sessions" element={<SessionsPage />} />
+        </Routes>
+      </AppShell.Main>
+    </AppShell>
+  );
+}

@@ -1,24 +1,12 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  Index,
-  ObjectIdColumn,
-} from 'typeorm';
-import { ObjectId } from 'mongodb';
+import { Column, Entity, Index } from 'typeorm';
+import { BaseEntity } from './base.entity';
 
 @Entity({ name: 'users' })
-export class User {
-  @ObjectIdColumn()
-  id: ObjectId;
-
+export class User extends BaseEntity {
   @Index({ unique: true })
   @Column()
   email: string;
 
   @Column()
   password: string;
-
-  @CreateDateColumn()
-  createdAt: Date;
 }
