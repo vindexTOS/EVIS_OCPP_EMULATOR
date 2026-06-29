@@ -20,6 +20,11 @@ export class ChargePoint extends BaseEntity {
   @Column()
   name: string;
 
+  // OCPP charge point identity sent in BootNotification so the CSMS
+  // registers/recognises this exact device on every (re)connection.
+  @Column()
+  chargePointId: string;
+
   @Column()
   vendor: string;
 

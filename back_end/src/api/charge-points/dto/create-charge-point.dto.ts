@@ -28,6 +28,10 @@ export class CreateChargePointDto {
   @IsString()
   name: string;
 
+  // OCPP identity sent in BootNotification (not auto-generated).
+  @IsString()
+  chargePointId: string;
+
   @IsString()
   vendor: string;
 

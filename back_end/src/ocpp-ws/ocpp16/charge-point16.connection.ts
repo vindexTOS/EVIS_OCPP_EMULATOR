@@ -3,22 +3,31 @@ import { RpcClient } from '../core/rpc-client';
 import {
   AuthorizeConf,
   BootNotificationConf,
+  CancelReservationReq,
   ChangeAvailabilityReq,
   ChangeConfigurationReq,
+  DataTransferConf,
+  DataTransferReq,
+  GetCompositeScheduleReq,
   GetConfigurationReq,
+  GetDiagnosticsReq,
   MeterValue,
   RemoteStartTransactionReq,
   RemoteStopTransactionReq,
+  ReserveNowReq,
   ResetReq,
   SampledValue,
+  SendLocalListReq,
   SetChargingProfileReq,
   StartTransactionConf,
   TriggerMessageReq,
   UnlockConnectorReq,
+  UpdateFirmwareReq,
 } from './messages';
 
 export interface ChargePoint16Params {
   csmsUrl: string;
+  chargePointId: string;
   vendor: string;
   model: string;
   firmwareVersion: string;
@@ -33,6 +42,10 @@ export class ChargePoint16Connection extends EventEmitter {
   private readonly rpc: RpcClient;
   private heartbeatTimer?: NodeJS.Timeout;
   private readonly profileLimitsW = new Map<number, number>();
+  // One-shot rejection overrides for testing CSMS-side handling.
+  private rejectBoot = false;
+  private rejectAuthorize = false;
+  private localListVersion = 0;
 
   constructor(private readonly params: ChargePoint16Params) {
     super();
@@ -40,6 +53,7 @@ export class ChargePoint16Connection extends EventEmitter {
     this.rpc.on('open', () => void this.onOpen());
     this.rpc.on('close', () => this.onClose());
     this.rpc.on('error', (err) => this.emit('error', err));
+    this.rpc.on('frame', (f) => this.emit('frame', f));
     this.registerHandlers();
   }
 
@@ -71,6 +85,9 @@ export class ChargePoint16Connection extends EventEmitter {
       chargePointVendor: this.params.vendor,
       chargePointModel: this.params.model,
       firmwareVersion: this.params.firmwareVersion,
+      // Stable identity so the CSMS recognises this exact charge point.
+      chargePointSerialNumber: this.params.chargePointId,
+      chargeBoxSerialNumber: this.params.chargePointId,
     });
   }
 
@@ -88,6 +105,11 @@ export class ChargePoint16Connection extends EventEmitter {
   }
 
   async authorize(idTag: string): Promise<string> {
+    if (this.rejectAuthorize) {
+      this.rejectAuthorize = false;
+      this.emit('authorizeRejected', idTag);
+      return 'Blocked';
+    }
     const conf = await this.rpc.call<AuthorizeConf>('Authorize', { idTag });
     return conf.idTagInfo.status;
   }
@@ -133,11 +155,40 @@ export class ChargePoint16Connection extends EventEmitter {
     });
   }
 
+  dataTransfer(req: DataTransferReq) {
+    return this.rpc.call<DataTransferConf>('DataTransfer', req);
+  }
+
+  diagnosticsStatusNotification(status: string) {
+    return this.rpc.call('DiagnosticsStatusNotification', { status });
+  }
+
+  firmwareStatusNotification(status: string) {
+    return this.rpc.call('FirmwareStatusNotification', { status });
+  }
+
+  /** Invoke any CP -> CSMS action by name (used by the manual command API). */
+  sendCall<T = unknown>(action: string, payload: unknown): Promise<T> {
+    return this.rpc.call<T>(action, payload);
+  }
+
+  /** Arm one-shot rejection of the next BootNotification / Authorize. */
+  simulateReject({ boot, authorize }: { boot?: boolean; authorize?: boolean }) {
+    if (boot != null) this.rejectBoot = boot;
+    if (authorize != null) this.rejectAuthorize = authorize;
+    return { rejectBoot: this.rejectBoot, rejectAuthorize: this.rejectAuthorize };
+  }
+
   // --- Lifecycle ---
 
   private async onOpen() {
     try {
       const conf = await this.bootNotification();
+      if (this.rejectBoot) {
+        this.rejectBoot = false;
+        this.emit('bootRejected', 'Rejected');
+        return;
+      }
       if (conf.status !== 'Accepted') {
         this.emit('bootRejected', conf.status);
         return;
@@ -254,12 +305,73 @@ export class ChargePoint16Connection extends EventEmitter {
         'Heartbeat',
         'StatusNotification',
         'BootNotification',
+        'MeterValues',
+        'DiagnosticsStatusNotification',
+        'FirmwareStatusNotification',
       ];
       if (!supported.includes(req.requestedMessage)) {
         return { status: 'NotImplemented' };
       }
       this.emit('trigger', req);
       return { status: 'Accepted' };
+    });
+
+    this.rpc.handle('DataTransfer', (p) => {
+      this.emit('dataTransfer', p as DataTransferReq);
+      return { status: 'Accepted' } satisfies DataTransferConf;
+    });
+
+    this.rpc.handle('ReserveNow', (p) => {
+      this.emit('reserveNow', p as ReserveNowReq);
+      return { status: 'Accepted' };
+    });
+
+    this.rpc.handle('CancelReservation', (p) => {
+      this.emit('cancelReservation', p as CancelReservationReq);
+      return { status: 'Accepted' };
+    });
+
+    this.rpc.handle('GetDiagnostics', (p) => {
+      const req = p as GetDiagnosticsReq;
+      this.emit('getDiagnostics', req);
+      // Asynchronously report upload progress to the CSMS.
+      setTimeout(() => {
+        void this.diagnosticsStatusNotification('Uploading').catch(() => undefined);
+        setTimeout(
+          () => void this.diagnosticsStatusNotification('Uploaded').catch(() => undefined),
+          1000,
+        );
+      }, 200);
+      return { fileName: `diagnostics-${Date.now()}.txt` };
+    });
+
+    this.rpc.handle('UpdateFirmware', (p) => {
+      this.emit('updateFirmware', p as UpdateFirmwareReq);
+      setTimeout(() => {
+        void this.firmwareStatusNotification('Downloading').catch(() => undefined);
+        setTimeout(
+          () => void this.firmwareStatusNotification('Installed').catch(() => undefined),
+          1000,
+        );
+      }, 200);
+      return {};
+    });
+
+    this.rpc.handle('GetLocalListVersion', () => ({
+      listVersion: this.localListVersion,
+    }));
+
+    this.rpc.handle('SendLocalList', (p) => {
+      const req = p as SendLocalListReq;
+      this.localListVersion = req.listVersion;
+      this.emit('sendLocalList', req);
+      return { status: 'Accepted' };
+    });
+
+    this.rpc.handle('GetCompositeSchedule', (p) => {
+      const req = p as GetCompositeScheduleReq;
+      this.emit('getCompositeSchedule', req);
+      return { status: 'Rejected' };
     });
   }
 }

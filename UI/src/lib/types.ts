@@ -33,6 +33,7 @@ export interface Connector {
 export interface ChargePoint {
   id: string;
   name: string;
+  chargePointId: string;
   vendor: string;
   model: string;
   firmwareVersion: string;
@@ -59,6 +60,18 @@ export interface MeterSample {
   energyWh: number;
   powerW: number;
   soc: number;
+}
+
+export interface OcppLogEntry {
+  id: string;
+  chargePointId: string;
+  direction: 'in' | 'out';
+  /** OCPP-J message type: 2 = CALL, 3 = CALLRESULT, 4 = CALLERROR. */
+  messageType: number;
+  action: string;
+  messageId: string;
+  payload: unknown;
+  ts: string;
 }
 
 export interface ChargingSession {

@@ -32,4 +32,9 @@ export class RealtimeGateway {
   onSessionEnded(payload: unknown) {
     this.server?.emit(ENGINE_EVENTS.sessionEnded, payload);
   }
+
+  @OnEvent(ENGINE_EVENTS.ocppLog)
+  onOcppLog(payload: unknown) {
+    this.server?.emit(ENGINE_EVENTS.ocppLog, payload);
+  }
 }

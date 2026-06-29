@@ -24,6 +24,7 @@ interface ConnectorValue {
 }
 interface FormValues {
   name: string;
+  chargePointId: string;
   vendor: string;
   model: string;
   csmsUrl: string;
@@ -32,6 +33,7 @@ interface FormValues {
 
 const empty: FormValues = {
   name: '',
+  chargePointId: '',
   vendor: 'Evis',
   model: 'Emulator',
   csmsUrl: 'ws://localhost:9000',
@@ -52,6 +54,7 @@ export function ChargePointForm({
     initialValues: editing
       ? {
           name: editing.name,
+          chargePointId: editing.chargePointId,
           vendor: editing.vendor,
           model: editing.model,
           csmsUrl: editing.csmsUrl,
@@ -83,7 +86,16 @@ export function ChargePointForm({
     >
       <form onSubmit={form.onSubmit((v) => mutation.mutate(v))}>
         <Stack>
-          <TextInput label="Name" required {...form.getInputProps('name')} />
+          <Group grow>
+            <TextInput label="Name" required {...form.getInputProps('name')} />
+            <TextInput
+              label="Charge Point ID (OCPP identity)"
+              description="Sent in BootNotification; must match the device registered on the CSMS"
+              required
+              placeholder="e.g. CP001"
+              {...form.getInputProps('chargePointId')}
+            />
+          </Group>
           <Group grow>
             <TextInput label="Vendor" {...form.getInputProps('vendor')} />
             <TextInput label="Model" {...form.getInputProps('model')} />

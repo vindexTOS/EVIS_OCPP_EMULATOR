@@ -39,5 +39,20 @@ services:
       - ./back_end:/app
       - /app/node_modules
 
+  ui:
+    build:
+      context: ./UI
+      target: development
+    container_name: ocpp-ui
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - '${UI_PORT:-5173}:5173'
+    volumes:
+      # Bind-mount source for hot reload, but keep the container's node_modules.
+      - ./UI:/app
+      - /app/node_modules
+
 volumes:
   mongo_data:

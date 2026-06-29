@@ -30,6 +30,7 @@ export class ChargePointsService {
   create(dto: CreateChargePointDto) {
     const cp = this.chargePoints.create({
       name: dto.name,
+      chargePointId: dto.chargePointId,
       vendor: dto.vendor,
       model: dto.model,
       firmwareVersion: dto.firmwareVersion ?? '1.0.0',

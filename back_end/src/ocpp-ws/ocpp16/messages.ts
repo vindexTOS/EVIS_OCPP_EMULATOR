@@ -4,6 +4,8 @@ export interface BootNotificationReq {
   chargePointVendor: string;
   chargePointModel: string;
   firmwareVersion?: string;
+  chargePointSerialNumber?: string;
+  chargeBoxSerialNumber?: string;
 }
 export interface BootNotificationConf {
   status: 'Accepted' | 'Pending' | 'Rejected';
@@ -89,4 +91,48 @@ export interface ChargingProfile {
 export interface SetChargingProfileReq {
   connectorId: number;
   csChargingProfiles: ChargingProfile;
+}
+
+export interface DataTransferReq {
+  vendorId: string;
+  messageId?: string;
+  data?: string;
+}
+export interface DataTransferConf {
+  status: 'Accepted' | 'Rejected' | 'UnknownMessageId' | 'UnknownVendorId';
+  data?: string;
+}
+
+export interface ReserveNowReq {
+  connectorId: number;
+  expiryDate: string;
+  idTag: string;
+  reservationId: number;
+  parentIdTag?: string;
+}
+export interface CancelReservationReq {
+  reservationId: number;
+}
+export interface GetDiagnosticsReq {
+  location: string;
+  retries?: number;
+  retryInterval?: number;
+  startTime?: string;
+  stopTime?: string;
+}
+export interface UpdateFirmwareReq {
+  location: string;
+  retrieveDate: string;
+  retries?: number;
+  retryInterval?: number;
+}
+export interface SendLocalListReq {
+  listVersion: number;
+  updateType: 'Differential' | 'Full';
+  localAuthorizationList?: unknown[];
+}
+export interface GetCompositeScheduleReq {
+  connectorId: number;
+  duration: number;
+  chargingRateUnit?: 'W' | 'A';
 }

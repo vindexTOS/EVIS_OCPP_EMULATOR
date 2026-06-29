@@ -9,6 +9,7 @@ import {
 } from './ocpp-message';
 
 type PendingCall = {
+  action: string;
   resolve: (value: unknown) => void;
   reject: (reason: Error) => void;
   timer: NodeJS.Timeout;
@@ -17,6 +18,14 @@ type PendingCall = {
 export type IncomingCallHandler = (
   payload: unknown,
 ) => Promise<unknown> | unknown;
+
+export interface FrameEvent {
+  direction: 'in' | 'out';
+  messageType: MessageType;
+  action: string;
+  messageId: string;
+  payload: unknown;
+}
 
 export interface RpcClientOptions {
   subProtocol?: string;
@@ -85,10 +94,12 @@ export class RpcClient extends EventEmitter {
         reject(new Error(`OCPP call ${action} timed out`));
       }, this.opts.callTimeoutMs);
       this.pending.set(messageId, {
+        action,
         resolve: resolve as (value: unknown) => void,
         reject,
         timer,
       });
+      this.emitFrame('out', MessageType.CALL, action, messageId, payload);
       ws.send(JSON.stringify([MessageType.CALL, messageId, action, payload]));
     });
   }
@@ -139,11 +150,19 @@ export class RpcClient extends EventEmitter {
         break;
       case MessageType.CALLRESULT: {
         const [, messageId, payload] = msg;
+        const action = this.pending.get(messageId)?.action ?? '';
+        this.emitFrame('in', MessageType.CALLRESULT, action, messageId, payload);
         this.settle(messageId, (p) => p.resolve(payload));
         break;
       }
       case MessageType.CALLERROR: {
-        const [, messageId, code, description] = msg;
+        const [, messageId, code, description, details] = msg;
+        const action = this.pending.get(messageId)?.action ?? '';
+        this.emitFrame('in', MessageType.CALLERROR, action, messageId, {
+          code,
+          description,
+          details,
+        });
         this.settle(messageId, (p) =>
           p.reject(new Error(`${code}: ${description}`)),
         );
@@ -161,8 +180,13 @@ export class RpcClient extends EventEmitter {
   }
 
   private async onCall([, messageId, action, payload]: OcppCall) {
+    this.emitFrame('in', MessageType.CALL, action, messageId, payload);
     const handler = this.handlers.get(action);
     if (!handler) {
+      this.emitFrame('out', MessageType.CALLERROR, action, messageId, {
+        code: OcppErrorCode.NotImplemented,
+        description: `Unsupported action: ${action}`,
+      });
       this.send([
         MessageType.CALLERROR,
         messageId,
@@ -174,8 +198,13 @@ export class RpcClient extends EventEmitter {
     }
     try {
       const result = await handler(payload);
+      this.emitFrame('out', MessageType.CALLRESULT, action, messageId, result ?? {});
       this.send([MessageType.CALLRESULT, messageId, result ?? {}]);
     } catch (err) {
+      this.emitFrame('out', MessageType.CALLERROR, action, messageId, {
+        code: OcppErrorCode.InternalError,
+        description: (err as Error).message,
+      });
       this.send([
         MessageType.CALLERROR,
         messageId,
@@ -184,6 +213,23 @@ export class RpcClient extends EventEmitter {
         {},
       ]);
     }
+  }
+
+  private emitFrame(
+    direction: 'in' | 'out',
+    messageType: MessageType,
+    action: string,
+    messageId: string,
+    payload: unknown,
+  ) {
+    const frame: FrameEvent = {
+      direction,
+      messageType,
+      action,
+      messageId,
+      payload,
+    };
+    this.emit('frame', frame);
   }
 
   private send(frame: unknown[]) {

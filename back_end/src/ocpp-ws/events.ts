@@ -6,6 +6,7 @@ export const ENGINE_EVENTS = {
   sessionStarted: 'session.started',
   sessionTick: 'session.tick',
   sessionEnded: 'session.ended',
+  ocppLog: 'ocpp.log',
   remoteStart: 'ocpp.remoteStart',
   remoteStop: 'ocpp.remoteStop',
 } as const;

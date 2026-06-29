@@ -10,6 +10,7 @@ export const ENGINE_EVENTS = {
   sessionStarted: 'session.started',
   sessionTick: 'session.tick',
   sessionEnded: 'session.ended',
+  ocppLog: 'ocpp.log',
 } as const;
 
 export interface SessionTick {

@@ -1,5 +1,11 @@
 import axios from 'axios';
-import type { Car, ChargePoint, ChargingSession } from './types';
+import type {
+  Car,
+  ChargePoint,
+  ChargingSession,
+  ConnectorStatus,
+  OcppLogEntry,
+} from './types';
 
 export const API_URL =
   import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api';
@@ -45,6 +51,29 @@ export const startCharging = (id: string, connectorId: number, carId?: string) =
   api.post(`/charge-points/${id}/connectors/${connectorId}/start`, { carId }).then((r) => r.data);
 export const stopCharging = (id: string, connectorId: number) =>
   api.post(`/charge-points/${id}/connectors/${connectorId}/stop`).then((r) => r.data);
+export const forceConnectorStatus = (
+  id: string,
+  connectorId: number,
+  status: ConnectorStatus,
+  payload?: Record<string, unknown>,
+) =>
+  api
+    .post(`/charge-points/${id}/connectors/${connectorId}/status`, { status, payload })
+    .then((r) => r.data);
+export const ocppCall = (id: string, action: string, payload?: unknown) =>
+  api.post(`/charge-points/${id}/ocpp/call`, { action, payload }).then((r) => r.data);
+export const getCommandTemplates = (id: string) =>
+  api
+    .get<Record<string, unknown>>(`/charge-points/${id}/ocpp/templates`)
+    .then((r) => r.data);
+export const simulateReject = (
+  id: string,
+  body: { boot?: boolean; authorize?: boolean },
+) => api.post(`/charge-points/${id}/simulate/reject`, body).then((r) => r.data);
+export const getChargePointLogs = (id: string, limit = 200) =>
+  api
+    .get<OcppLogEntry[]>(`/charge-points/${id}/logs`, { params: { limit } })
+    .then((r) => r.data);
 
 // --- Cars ---
 export const listCars = () => api.get<Car[]>('/cars').then((r) => r.data);
