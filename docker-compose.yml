@@ -1,8 +1,16 @@
+# What a server runs: the built backend and the built UI. No source is mounted and
+# no dev server runs, so nothing here compiles code on request.
+#
+# Never expose the Vite dev server (`yarn dev --host`) to a network you do not
+# trust: it compiles whatever a request names, and GHSA-p4f5-76q4-ffq7 turned that
+# into remote code execution. That is how this emulator's UI was attacked in
+# November 2026. For hot reload on your own machine, use docker-compose.dev.yml,
+# which only listens on 127.0.0.1.
 services:
   backend:
     build:
       context: ./back_end
-      target: development
+      target: production
     container_name: ocpp-backend
     restart: unless-stopped
     environment:
@@ -13,31 +21,26 @@ services:
     ports:
       - '${BACKEND_PORT:-3000}:3000'
     volumes:
-      # Bind-mount source for hot reload, but keep the container's node_modules.
-      - ./back_end:/app
-      - /app/node_modules
       # The SQLite file: chargers, cars and history survive a rebuild.
       - ocpp_data:/app/data
 
   ui:
     build:
       context: ./UI
-      target: development
+      target: production
     container_name: ocpp-ui
     restart: unless-stopped
     depends_on:
       - backend
     environment:
-      # Vite forwards /api and /socket.io here, over the compose network.
+      # `vite preview` serves the static build and forwards /api and /socket.io
+      # here. It does not compile anything, so it is not exposed to the dev
+      # server's attack surface.
       BACKEND_URL: http://backend:3000
       # Empty = the UI may be opened by any host name.
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-}
     ports:
       - '${UI_PORT:-5173}:5173'
-    volumes:
-      # Bind-mount source for hot reload, but keep the container's node_modules.
-      - ./UI:/app
-      - /app/node_modules
 
 volumes:
   ocpp_data:

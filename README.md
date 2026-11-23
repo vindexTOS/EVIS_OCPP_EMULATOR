@@ -58,11 +58,17 @@ pnpm mock:csms
 ### With Docker
 
 ```bash
-docker compose up
+docker compose up -d --build                  # a server: the built apps
+docker compose -f docker-compose.dev.yml up   # your machine: hot reload
 ```
 
 Backend on port 3000, UI on port 5173. The SQLite file is kept on the
-`ocpp_data` volume; `docker compose down -v` deletes it.
+`ocpp_data` volume, shared by both files; `docker compose down -v` deletes it.
+
+**Never expose the Vite dev server.** `docker-compose.yml` serves the built UI;
+`docker-compose.dev.yml` runs the dev servers and listens on 127.0.0.1 only. A
+dev server reachable from the internet is remote code execution
+([GHSA-p4f5-76q4-ffq7](https://github.com/vitejs/vite/security/advisories/GHSA-p4f5-76q4-ffq7)).
 
 ## Your first session
 

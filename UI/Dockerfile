@@ -9,8 +9,11 @@ COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile
 
 # ---- Development ----
-# Used by docker-compose. Source is bind-mounted, so Vite hot-reloads
-# on changes. --host exposes the dev server outside the container.
+# Used by docker-compose.dev.yml only. Source is bind-mounted, so Vite
+# hot-reloads on changes. --host listens on every interface *inside* the
+# container; docker-compose.dev.yml publishes it on 127.0.0.1 only. Never
+# publish this stage to a network: the dev server compiles whatever a request
+# names (GHSA-p4f5-76q4-ffq7 made that remote code execution).
 FROM base AS development
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -23,7 +26,9 @@ COPY . .
 RUN yarn build
 
 # ---- Production ----
-# Serves the static build with Vite's preview server.
+# Used by docker-compose.yml. Serves the static build with Vite's preview
+# server, which only serves files and forwards /api and /socket.io: it compiles
+# nothing on request.
 FROM base AS production
 ENV NODE_ENV=production
 COPY --from=build /app/node_modules ./node_modules

@@ -13,7 +13,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # ---- Development ----
-# Used by docker-compose. Source is bind-mounted, so `start:dev`
+# Used by docker-compose.dev.yml. Source is bind-mounted, so `start:dev`
 # hot-reloads on changes.
 FROM base AS development
 COPY --from=deps /app/node_modules ./node_modules

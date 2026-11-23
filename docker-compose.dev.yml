@@ -1,0 +1,46 @@
+# Hot reload on your own machine:  docker compose -f docker-compose.dev.yml up
+#
+# Runs the Vite and Nest dev servers with the source bind-mounted. Both ports are
+# bound to 127.0.0.1 on purpose: a dev server compiles whatever a request names,
+# and must never be reachable from another machine (GHSA-p4f5-76q4-ffq7). A server
+# runs docker-compose.yml instead. Same project and volume, so the SQLite data is
+# shared; run one file or the other, not both.
+services:
+  backend:
+    build:
+      context: ./back_end
+      target: development
+    container_name: ocpp-backend
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      SQLITE_PATH: /app/data/emulator.sqlite
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+    ports:
+      - '127.0.0.1:${BACKEND_PORT:-3000}:3000'
+    volumes:
+      # Bind-mount source for hot reload, but keep the container's node_modules.
+      - ./back_end:/app
+      - /app/node_modules
+      - ocpp_data:/app/data
+
+  ui:
+    build:
+      context: ./UI
+      target: development
+    container_name: ocpp-ui
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      BACKEND_URL: http://backend:3000
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-}
+    ports:
+      - '127.0.0.1:${UI_PORT:-5173}:5173'
+    volumes:
+      - ./UI:/app
+      - /app/node_modules
+
+volumes:
+  ocpp_data:
