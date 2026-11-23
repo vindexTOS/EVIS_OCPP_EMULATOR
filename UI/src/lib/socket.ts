@@ -1,7 +1,10 @@
 import { io } from 'socket.io-client';
 import { API_URL, token } from './api';
 
-export const WS_URL = import.meta.env.VITE_WS_URL ?? API_URL.replace(/\/api\/?$/, '');
+/** undefined = this page's own origin, where Vite forwards /socket.io to the backend. */
+export const WS_URL: string | undefined =
+  import.meta.env.VITE_WS_URL ||
+  (/^https?:\/\//i.test(API_URL) ? API_URL.replace(/\/api\/?$/, '') : undefined);
 
 export const socket = io(WS_URL, {
   transports: ['websocket'],

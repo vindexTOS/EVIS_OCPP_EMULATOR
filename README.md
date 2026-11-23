@@ -197,12 +197,17 @@ Copy `.env.example` to `.env` to change a default.
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `PORT` | `3000` | Backend port |
+| `BACKEND_PORT` | `3000` | Backend port (`PORT` wins if set) |
 | `SQLITE_PATH` | `data/emulator.sqlite` | The database file. `:memory:` keeps nothing. |
 | `JWT_SECRET` | `dev-secret-change-me` | Signs logins once the instance is locked |
 | `JWT_EXPIRES_IN` | `7d` | How long a login lasts |
-| `VITE_API_URL` | `http://localhost:3000/api` | Where the UI finds the backend |
-| `VITE_WS_URL` | the backend's origin | Where the UI gets live updates |
+| `UI_PORT` | `5173` | UI port |
+| `BACKEND_URL` | `http://localhost:$BACKEND_PORT` | Where the UI server forwards `/api` and `/socket.io` |
+| `ALLOWED_HOSTS` | any | Host names the UI may be opened by, comma-separated |
+| `VITE_API_URL` | `/api` (same origin) | Only for a static build without the Vite server: the backend's API address |
+| `VITE_WS_URL` | same origin | Same, for live updates |
+
+Both the backend and the UI read this one `.env` at the repository root.
 
 The emulator is open by default. The lock button in the top bar creates one
 account; from then on the API and the UI need a login.

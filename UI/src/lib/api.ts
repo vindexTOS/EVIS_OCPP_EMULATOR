@@ -17,7 +17,11 @@ import type {
   TapResult,
 } from './types';
 
-export const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api';
+/**
+ * Same origin by default: the Vite server forwards /api to BACKEND_URL (see
+ * vite.config.ts). Set VITE_API_URL only for a build served without that proxy.
+ */
+export const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const TOKEN_KEY = 'ocpp_token';
 

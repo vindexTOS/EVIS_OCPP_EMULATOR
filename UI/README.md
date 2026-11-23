@@ -10,11 +10,16 @@ yarn lint
 yarn build
 ```
 
-The UI expects the backend on `http://localhost:3000`. To point it elsewhere:
+The browser calls the UI's own origin (`/api`, `/socket.io`); the Vite server
+(`yarn dev` and `yarn preview`) forwards both to the backend. The address comes
+from the repository's `.env` (one level up) or the environment:
 
 ```bash
-VITE_API_URL=http://my-host:3000/api VITE_WS_URL=http://my-host:3000 yarn dev
+BACKEND_URL=http://my-host:3000 yarn dev    # default: http://localhost:$BACKEND_PORT (3000)
 ```
+
+`VITE_API_URL` / `VITE_WS_URL` are only for a static build served without the
+Vite server; they make the browser call the backend directly.
 
 ## Where things are
 

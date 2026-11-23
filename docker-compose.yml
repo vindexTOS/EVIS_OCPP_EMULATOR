@@ -27,6 +27,11 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
+    environment:
+      # Vite forwards /api and /socket.io here, over the compose network.
+      BACKEND_URL: http://backend:3000
+      # Empty = the UI may be opened by any host name.
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-}
     ports:
       - '${UI_PORT:-5173}:5173'
     volumes:

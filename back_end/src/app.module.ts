@@ -9,7 +9,8 @@ import { RealtimeModule } from './realtime/realtime.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    // back_end/.env first, then the repository's shared .env (the UI reads it too).
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: ['.env', '../.env'] }),
     EventEmitterModule.forRoot(),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],

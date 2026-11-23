@@ -76,7 +76,11 @@ export function AuthGate({ children }: { children: ReactNode }) {
             <IconPlugConnectedX size={26} />
           </span>
           <strong>The emulator backend is not reachable</strong>
-          <span>Start it, then try again. It is expected at the address the UI was built for.</span>
+          <span>
+            Start it (<span className="mono">pnpm start:dev</span> in <span className="mono">back_end</span>),
+            then try again. The UI server forwards <span className="mono">/api</span> to{' '}
+            <span className="mono">BACKEND_URL</span> from <span className="mono">.env</span>.
+          </span>
           <Button variant="light" onClick={() => void status.refetch()} loading={status.isFetching}>
             Try again
           </Button>
