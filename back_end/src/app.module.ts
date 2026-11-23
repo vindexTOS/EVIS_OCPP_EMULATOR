@@ -2,10 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { ApiModule } from './api/api.module';
-import { OcppWsModule } from './ocpp-ws/ocpp-ws.module';
+import { databaseOptions } from './config/database';
+import { EngineModule } from './engine/engine.module';
 import { RealtimeModule } from './realtime/realtime.module';
 
 @Module({
@@ -14,22 +13,14 @@ import { RealtimeModule } from './realtime/realtime.module';
     EventEmitterModule.forRoot(),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'mongodb',
-        url: config.get<string>(
-          'MONGO_URI',
-          'mongodb://localhost:27017/ocpp_emulator',
+      useFactory: (config: ConfigService) =>
+        databaseOptions(
+          config.get<string>('SQLITE_PATH', 'data/emulator.sqlite'),
         ),
-        database: config.get<string>('MONGO_DB', 'ocpp_emulator'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: true,
-      }),
     }),
+    EngineModule,
     ApiModule,
-    OcppWsModule,
     RealtimeModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}

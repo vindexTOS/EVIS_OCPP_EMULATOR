@@ -3,6 +3,9 @@
 /node_modules
 /build
 
+# The emulator's SQLite database
+/data
+
 # Logs
 logs
 *.log

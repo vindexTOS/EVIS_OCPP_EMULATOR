@@ -1,7 +1,7 @@
 {
-  "name": "back_end",
+  "name": "evis-ocpp-emulator-backend",
   "version": "0.0.1",
-  "description": "",
+  "description": "OCPP 1.6 charge point emulator: NestJS API, engine and SQLite storage",
   "author": "",
   "private": true,
   "license": "UNLICENSED",
@@ -18,7 +18,7 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "mock:csms": "ts-node tools/mock-csms.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -32,9 +32,9 @@
     "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.0.1",
     "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^12.11.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
-    "mongodb": "^6.12.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.1",
@@ -48,6 +48,7 @@
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
     "@types/bcryptjs": "^2.4.6",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.10.7",
@@ -74,15 +75,21 @@
       "json",
       "ts"
     ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
+    "rootDir": ".",
+    "testRegex": "test/.*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "src/**/*.(t|j)s"
     ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "coverageDirectory": "./coverage",
+    "testEnvironment": "node",
+    "testTimeout": 20000
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3"
+    ]
   }
 }

@@ -1,40 +1,29 @@
 import { OnEvent } from '@nestjs/event-emitter';
-import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
-import { Server } from 'socket.io';
-import { ENGINE_EVENTS } from '../ocpp-ws/events';
+import {
+  OnGatewayConnection,
+  WebSocketGateway,
+  WebSocketServer,
+} from '@nestjs/websockets';
+import type { Server, Socket } from 'socket.io';
+import { AuthService } from '../api/auth/auth.service';
+import { ENGINE_BUS } from '../engine/engine.service';
+import type { EngineBusMessage } from '../engine/engine.service';
 
+/** Pushes everything the engine reports to the browsers, as it happens. */
 @WebSocketGateway({ cors: true })
-export class RealtimeGateway {
+export class RealtimeGateway implements OnGatewayConnection {
   @WebSocketServer()
   private server: Server;
 
-  @OnEvent(ENGINE_EVENTS.chargePointStatus)
-  onChargePointStatus(payload: unknown) {
-    this.server?.emit(ENGINE_EVENTS.chargePointStatus, payload);
+  constructor(private readonly auth: AuthService) {}
+
+  async handleConnection(client: Socket) {
+    const token = client.handshake.auth?.token as string | undefined;
+    if (!(await this.auth.verify(token))) client.disconnect(true);
   }
 
-  @OnEvent(ENGINE_EVENTS.connectorUpdate)
-  onConnectorUpdate(payload: unknown) {
-    this.server?.emit(ENGINE_EVENTS.connectorUpdate, payload);
-  }
-
-  @OnEvent(ENGINE_EVENTS.sessionStarted)
-  onSessionStarted(payload: unknown) {
-    this.server?.emit(ENGINE_EVENTS.sessionStarted, payload);
-  }
-
-  @OnEvent(ENGINE_EVENTS.sessionTick)
-  onSessionTick(payload: unknown) {
-    this.server?.emit(ENGINE_EVENTS.sessionTick, payload);
-  }
-
-  @OnEvent(ENGINE_EVENTS.sessionEnded)
-  onSessionEnded(payload: unknown) {
-    this.server?.emit(ENGINE_EVENTS.sessionEnded, payload);
-  }
-
-  @OnEvent(ENGINE_EVENTS.ocppLog)
-  onOcppLog(payload: unknown) {
-    this.server?.emit(ENGINE_EVENTS.ocppLog, payload);
+  @OnEvent(ENGINE_BUS)
+  onEngine(message: EngineBusMessage) {
+    this.server?.emit(message.event, message.payload);
   }
 }

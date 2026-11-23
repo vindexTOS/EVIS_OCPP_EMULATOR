@@ -1,19 +1,34 @@
-import { Column, Entity } from 'typeorm';
-import { BaseEntity } from './base.entity';
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { ChargePoint } from './charge-point.entity';
 
-/**
- * A single OCPP-J frame (CALL / CALLRESULT / CALLERROR) observed on a charge
- * point's CSMS connection. Rows self-expire via a TTL index on `ts`
- * (see OcppLogService.onModuleInit).
- */
+/** One OCPP-J frame (CALL / CALLRESULT / CALLERROR) seen on a charger's CSMS link. */
 @Entity({ name: 'ocpp_logs' })
-export class OcppLog extends BaseEntity {
-  @Column()
-  chargePointId: string;
+@Index(['chargePointId', 'id'])
+export class OcppLog {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @ManyToOne(() => ChargePoint, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'chargePointId' })
+  chargePoint?: ChargePoint;
 
   @Column()
+  chargePointId: number;
+
+  @Column({ type: 'datetime' })
+  ts: Date;
+
+  @Column({ type: 'varchar' })
   direction: 'in' | 'out';
 
+  /** 2 = CALL, 3 = CALLRESULT, 4 = CALLERROR. */
   @Column()
   messageType: number;
 
@@ -23,9 +38,6 @@ export class OcppLog extends BaseEntity {
   @Column()
   messageId: string;
 
-  @Column()
-  payload: unknown;
-
-  @Column()
-  ts: Date;
+  @Column({ type: 'simple-json', nullable: true })
+  payload: any;
 }

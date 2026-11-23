@@ -6,7 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
-import { MongoRepository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { User } from '../../entities/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -17,14 +17,27 @@ export class AuthService {
 
   constructor(
     @InjectRepository(User)
-    private readonly users: MongoRepository<User>,
+    private readonly users: Repository<User>,
     private readonly jwt: JwtService,
   ) {}
 
+  /** Locked means: a user exists, so the API needs a token. */
   async isLocked(): Promise<boolean> {
     if (this.locked) return true;
     this.locked = (await this.users.count()) > 0;
     return this.locked;
+  }
+
+  /** Check a token outside the HTTP guard (the Socket.IO handshake). */
+  async verify(token: string | undefined): Promise<boolean> {
+    if (!(await this.isLocked())) return true;
+    if (!token) return false;
+    try {
+      await this.jwt.verifyAsync(token);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async register(dto: RegisterDto) {
@@ -48,7 +61,7 @@ export class AuthService {
   }
 
   private issueToken(user: User) {
-    const sub = user.id.toString();
+    const sub = String(user.id);
     return {
       accessToken: this.jwt.sign({ sub, email: user.email }),
       user: { id: sub, email: user.email },

@@ -12,3 +12,4 @@ coverage
 .idea
 Dockerfile
 .dockerignore
+data

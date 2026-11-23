@@ -1,24 +1,21 @@
 import { io } from 'socket.io-client';
+import { API_URL, token } from './api';
 
-export const WS_URL = import.meta.env.VITE_WS_URL ?? 'http://localhost:3000';
+export const WS_URL = import.meta.env.VITE_WS_URL ?? API_URL.replace(/\/api\/?$/, '');
 
-export const socket = io(WS_URL, { transports: ['websocket'] });
+export const socket = io(WS_URL, {
+  transports: ['websocket'],
+  // Read the token at each (re)connect, so a login takes effect without a reload.
+  auth: (cb) => cb({ token: token.get() }),
+});
 
-export const ENGINE_EVENTS = {
-  chargePointStatus: 'chargepoint.status',
-  connectorUpdate: 'connector.update',
-  sessionStarted: 'session.started',
-  sessionTick: 'session.tick',
-  sessionEnded: 'session.ended',
-  ocppLog: 'ocpp.log',
+/** Names of the events the backend pushes (ENGINE_EVENTS in the backend). */
+export const EVENTS = {
+  charger: 'chargepoint.update',
+  chargerRemoved: 'chargepoint.removed',
+  car: 'car.update',
+  carRemoved: 'car.removed',
+  log: 'ocpp.log',
+  event: 'chargepoint.event',
+  session: 'session.update',
 } as const;
-
-export interface SessionTick {
-  sessionId: string;
-  chargePointId: string;
-  connectorId: number;
-  carId?: string;
-  powerW: number;
-  energyDeliveredWh: number;
-  soc: number;
-}

@@ -1,0 +1,109 @@
+/* Design tokens. Everything else in the UI is written against these roles. */
+
+:root {
+  --font-sans: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 18px;
+  --topbar: 56px;
+}
+
+:root[data-mantine-color-scheme='dark'] {
+  color-scheme: dark;
+  --bg: #090d12;
+  --surface-1: #121820;
+  --surface-2: #19212b;
+  --surface-3: #222c38;
+  --line: rgba(255, 255, 255, 0.075);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --text: #e8edf4;
+  --text-2: #a8b3c2;
+  --muted: #6f7b8c;
+
+  /* Energy green: the one accent, used where power flows or an action is primary. */
+  --accent: #2fdc87;
+  --accent-strong: #5ff0a5;
+  --accent-soft: rgba(47, 220, 135, 0.13);
+  --accent-ink: #04170d;
+
+  /* Status tones. Always shown with a label, never as colour alone. */
+  --tone-ok: #34d17f;
+  --tone-energy: #2fdc87;
+  --tone-warn: #f2b53a;
+  --tone-info: #5ba8ff;
+  --tone-violet: #a58cfa;
+  --tone-crit: #f0605a;
+  --tone-off: #6f7b8c;
+
+  /* Chart series, in fixed order (validated on --surface-1 in both schemes). */
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+  --series-8: #e66767;
+  --series-other: #5b6676;
+  --chart-grid: #222b36;
+  --chart-axis: #344150;
+
+  --scene-top: #18222e;
+  --scene-bottom: #0c1117;
+  --scene-floor: #0f151c;
+  --scene-line: rgba(255, 255, 255, 0.055);
+  --cable: #232b35;
+  --cable-edge: #3b4654;
+
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.035) inset, 0 12px 32px -12px rgba(0, 0, 0, 0.55);
+  --shadow-pop: 0 18px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+:root[data-mantine-color-scheme='light'] {
+  color-scheme: light;
+  --bg: #f1f3f6;
+  --surface-1: #ffffff;
+  --surface-2: #f5f7fa;
+  --surface-3: #eaeef3;
+  --line: rgba(13, 23, 38, 0.09);
+  --line-strong: rgba(13, 23, 38, 0.17);
+  --text: #0e1622;
+  --text-2: #465366;
+  --muted: #8290a3;
+
+  --accent: #10b467;
+  --accent-strong: #0c9a57;
+  --accent-soft: rgba(16, 180, 103, 0.12);
+  --accent-ink: #ffffff;
+
+  --tone-ok: #12a35d;
+  --tone-energy: #10b467;
+  --tone-warn: #d99a12;
+  --tone-info: #2f7fe0;
+  --tone-violet: #7a5ce6;
+  --tone-crit: #d8453f;
+  --tone-off: #8290a3;
+
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #6250d6;
+  --series-8: #e34948;
+  --series-other: #a3adba;
+  --chart-grid: #e6eaef;
+  --chart-axis: #c9d0d9;
+
+  --scene-top: #e9eef4;
+  --scene-bottom: #dfe5ec;
+  --scene-floor: #d3dae3;
+  --scene-line: rgba(13, 23, 38, 0.07);
+  --cable: #2a323d;
+  --cable-edge: #4a5665;
+
+  --shadow-card: 0 1px 2px rgba(13, 23, 38, 0.05), 0 10px 28px -14px rgba(13, 23, 38, 0.18);
+  --shadow-pop: 0 18px 50px -14px rgba(13, 23, 38, 0.32), 0 0 0 1px rgba(13, 23, 38, 0.08);
+}

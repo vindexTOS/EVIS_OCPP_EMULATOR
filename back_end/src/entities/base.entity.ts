@@ -1,13 +1,12 @@
 import {
   CreateDateColumn,
-  ObjectIdColumn,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { ObjectId } from 'mongodb';
 
 export abstract class BaseEntity {
-  @ObjectIdColumn()
-  id: ObjectId;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @CreateDateColumn()
   createdAt: Date;
